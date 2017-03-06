@@ -2,10 +2,15 @@
 using System.Collections;
 
 public class CardStack : MonoBehaviour {
-    private Deck deck = new Deck();
+    public Card StandIn;
+    public float xValue;
+    public float yValue;
+    public float zValue;
 
-    void OnClick() //Draws next card
+    void Update()
     {
-
+        StandIn.transform.position = new Vector3(xValue, yValue, zValue);
     }
+
+
 }

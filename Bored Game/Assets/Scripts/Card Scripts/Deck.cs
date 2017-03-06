@@ -5,11 +5,11 @@ using System.Collections.Generic;
 public class Deck : MonoBehaviour {
     public Card[] cards;
     public List<Card> UnoDeck = new List<Card>();
-   // public ArrayList CardsPlayed = new ArrayList();
     public int cardsLeft;
 
     public void CreateDeck()
     {
+        print("Create");
         for (int i = 0; i < cards.Length; i++)
         {
             UnoDeck.Add(cards[i]);
@@ -31,10 +31,18 @@ public class Deck : MonoBehaviour {
     {
         Card nextCard = UnoDeck[UnoDeck.Count - 1];
         UnoDeck.RemoveAt(UnoDeck.Count - 1);
+        gameObject.GetComponent<CardStack>().StandIn = nextCard;
         cardsLeft -= 1;
         return nextCard;
     }
-
+    public List<Card> ReShuffle(Deck Cards)
+    {
+        UnoDeck = Cards.GetComponent<Deck>().UnoDeck;
+        UnoDeck.RemoveAt(UnoDeck.Count - 1);
+        cardsLeft = UnoDeck.Count;
+        Shuffle(3);
+        return UnoDeck;
+    }
     public List<Card> Shuffle(int numShuffle)  
     {
         if (numShuffle == 0)

@@ -18,6 +18,7 @@ public class Card : MonoBehaviour {
      * Yellow = 3
      * None = 4
      * */
+    public bool selected;
 
     public int ReturnSuit()
     {
