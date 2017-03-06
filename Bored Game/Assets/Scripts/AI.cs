@@ -12,4 +12,9 @@ public class AI : MonoBehaviour {
 	void Update () {
 	
 	}
+
+    public void PlayCard()
+    {
+
+    }
 }
