@@ -1,20 +1,27 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour {
-    public GameObject Player;
+    public GameObject Player; 
     public GameObject AI;
+
     public Deck deck;
     public Deck played;
     public int turn;
-    public int cardSelected = 0;
-    public List<Card> SelectedCards = new List<Card>();
-    public List<Card> SelectedInstances = new List<Card>();
+
+    private GameObject PlayerInstance;
+    private GameObject[] AIInstances = new GameObject[3];
     private Deck DeckInstance;
     private Deck PlayedInstance;
-    public Card DeckCardInstance;
-    public Card PlayedCardInstance;
+    private Card DeckCardInstance;
+    private Card PlayedCardInstance;
+
+    public RawImage PlayerTurn;
+    public RawImage AI1Turn;
+    public RawImage AI2Turn;
+    public RawImage AI3Turn;
 
     void Start()
     {
@@ -24,36 +31,44 @@ public class GameManager : MonoBehaviour {
     void Update()
     { 
         if (turn == 0)
-        { 
+        {
             if (Input.GetKeyDown(KeyCode.Space)) //Draws Card
             {
-                GetNextCard(Player,-90, 180);
+                GetNextCard(PlayerInstance, -91, -90, -90);
+                turn++;
             }
             if (Input.GetKeyDown(KeyCode.RightArrow))//Moves the cards up to see which card is currently being viewed to the right
             {
-                MoveRight();
+                PlayerInstance.GetComponent<Hand>().MoveRight();
             }
 
             if (Input.GetKeyDown(KeyCode.LeftArrow))
             {
-                MoveLeft();
+                PlayerInstance.GetComponent<Hand>().MoveLeft();
             }
       
             if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift)) //Selects or Deselects cards going to be played
             {
-                SelectCard();
+                PlayerInstance.GetComponent<Hand>().SelectCard();
             }
 
             if (Input.GetKeyDown(KeyCode.Return))
             {
-                PlayCards();
+                PlayCards(PlayerInstance, PlayerInstance.GetComponent<Hand>().SelectedCards, PlayerInstance.GetComponent<Hand>().SelectedInstances);
             }
         }
 
-        else if (turn == 1)
+        else if (turn > 0)
         {
             if (Input.GetKeyDown(KeyCode.S)){
-                turn = 0;
+                if (turn < 3)
+                {
+                    turn++;
+                }
+                else
+                {
+                    turn = 0;
+                }
             }
         }
 
@@ -63,96 +78,87 @@ public class GameManager : MonoBehaviour {
             PlayedInstance.GetComponent<Deck>().UnoDeck.RemoveRange(0, PlayedInstance.GetComponent<Deck>().UnoDeck.Count -2);
             PlayedInstance.GetComponent<Deck>().cardsLeft = 1;
         }
+        print(turn);
+        ViewTurn();
+    }
+
+    void ViewTurn()
+    {
+        if (turn == 0)
+            PlayerTurn.enabled = true;
+        else
+            PlayerTurn.enabled = false;
+        if (turn == 1)
+            AI1Turn.enabled = true;
+        else
+            AI1Turn.enabled = false;
+        if (turn == 2)
+            AI2Turn.enabled = true;
+        else
+            AI2Turn.enabled = false;
+        if (turn == 3)
+            AI3Turn.enabled = true;
+        else
+            AI3Turn.enabled = false;
     }
 
     void FirstDeal() //Hands out first 7 cards to all players
     {
         for (int i = 0; i < 7; i++)
         {
-            GetNextCard(Player, -90, 180);
-            GetNextCard(AI, 90, 0);
+            GetNextCard(PlayerInstance, -91, -90, -90);
+            GetNextCard(AIInstances[0], 91, 0, 90);
+            GetNextCard(AIInstances[1], 91, -90, 90);
+            GetNextCard(AIInstances[2], 91, 180, 90);
         }
     }
 
-    void GetNextCard(GameObject player, int xRotation, int yRotation)
+    void GetNextCard(GameObject player, int xRotation, int yRotation, int zRotation)
     {
         Card nextDraw = DeckInstance.Draw();
         SetDeckCardStandIn();
         player.GetComponent<Hand>().AddCard(nextDraw);
-        nextDraw = (Card)Instantiate(nextDraw, new Vector3(0, 0, 0), Quaternion.Euler(xRotation, yRotation, 0));
+        if (player.transform.position.z != -4f)
+        {
+            player.GetComponent<AI>().CheckCardsLeft(nextDraw);
+        }
+        nextDraw = (Card)Instantiate(nextDraw, new Vector3(0, 0, 0), Quaternion.Euler(xRotation, yRotation, zRotation));
         player.GetComponent<Hand>().AddInstance(nextDraw);
-        player.GetComponent<Hand>().HandFormat();
+        Hand(player);
     }
 
-    void MoveRight()
+    void Hand(GameObject player)
     {
-        if (cardSelected < Player.GetComponent<Hand>().CardInstances.Count - 1)
+        if (player.transform.position.z == PlayerInstance.transform.position.z || player.transform.position.z == AIInstances[1].transform.position.z)
         {
-            cardSelected++;
-            if (cardSelected != 0 && Player.GetComponent<Hand>().CardInstances[cardSelected - 1].selected == false)
-            {
-                Player.GetComponent<Hand>().CardInstances[cardSelected - 1].transform.position =
-                new Vector3(Player.GetComponent<Hand>().CardInstances[cardSelected - 1].transform.position.x, 0, -3f);
-            }
-            Player.GetComponent<Hand>().CardInstances[cardSelected].transform.position =
-                new Vector3(Player.GetComponent<Hand>().CardInstances[cardSelected].transform.position.x, 0, -2f);
+            player.GetComponent<Hand>().HandFormatLeftRight();
+        }
+        else
+        {
+            player.GetComponent<Hand>().HandFormatTopDown();
         }
     }
 
-    void MoveLeft()
+    void PlayCards(GameObject Player, List<Card> Cards, List<Card> Instances)
     {
-        if (cardSelected > 0) //Moves the cards up to see which card is currently being viewed to the left
+        //MUST ADD: CHECK FOR SPECIAL 
+        if (CanPlay(Instances))
         {
-            cardSelected--;
-            if (cardSelected != Player.GetComponent<Hand>().CardInstances.Count - 1 && Player.GetComponent<Hand>().CardInstances[cardSelected + 1].selected == false)
+            Card newPlayedInstance = Cards[Cards.Count - 1];
+            for (int i = 0; i < Instances.Count; i++) //Moves the selected cards to the middle 
             {
-                Player.GetComponent<Hand>().CardInstances[cardSelected + 1].transform.position =
-                new Vector3(Player.GetComponent<Hand>().CardInstances[cardSelected + 1].transform.position.x, 0, -3f);
-            }
-            Player.GetComponent<Hand>().CardInstances[cardSelected].transform.position =
-                new Vector3(Player.GetComponent<Hand>().CardInstances[cardSelected].transform.position.x, 0, -2f);
-        }
-    }
-
-    void SelectCard()
-    {
-        Player.GetComponent<Hand>().CardInstances[cardSelected].selected = !Player.GetComponent<Hand>().CardInstances[cardSelected].selected;
-
-        if (Player.GetComponent<Hand>().CardInstances[cardSelected].selected == true) //Adds cards to the selected cards list 
-        {
-            SelectedCards.Add(Player.GetComponent<Hand>().Cards[cardSelected]);
-            SelectedInstances.Add(Player.GetComponent<Hand>().CardInstances[cardSelected]);
-        }
-
-        else if (Player.GetComponent<Hand>().CardInstances[cardSelected].selected == false) //Removes cards in the selected cards list 
-        {
-            for (int i = 0; i < SelectedInstances.Count; i++)
-            {
-                if (Player.GetComponent<Hand>().CardInstances[cardSelected].suit == SelectedInstances[i].suit &&
-                    Player.GetComponent<Hand>().CardInstances[cardSelected].number == SelectedInstances[i].number)
+                Destroy(Instances[i].gameObject);
+                Instances.RemoveAt(i); //Removes the array from the arraylist
+                PlayedInstance.GetComponent<Deck>().UnoDeck.Add(Cards[i]); //Adds the card to cards played 
+                for (int j = 0; j < 3; j++)
                 {
-                    SelectedCards.RemoveAt(i);
-                    SelectedInstances.RemoveAt(i);
-                    break;
+                    AIInstances[j].GetComponent<AI>().CheckCardsLeft(Cards[i]);
                 }
-            }
-        }
-    }
-
-    void PlayCards()
-    {
-        if (CanPlay(SelectedInstances))
-        {
-            Card newPlayedInstance = SelectedCards[SelectedCards.Count - 1];
-            for (int i = 0; i < SelectedInstances.Count; i++) //Moves the selected cards to the middle 
-            {
-                Destroy(SelectedInstances[i].gameObject);
-                SelectedInstances.RemoveAt(i); //Removes the array from the arraylist
-                PlayedInstance.GetComponent<Deck>().UnoDeck.Add(SelectedCards[i]); //Adds the card to cards played 
-                SelectedCards.RemoveAt(i); //Removes the card from the selected cards' array
+                Cards.RemoveAt(i); //Removes the card from the selected cards' array
                 i--;
                 PlayedInstance.GetComponent<Deck>().cardsLeft++;
             }
+
             for (int j = 0; j < Player.GetComponent<Hand>().CardInstances.Count; j++) //Removes the cards from the player's hand
             {
                 if (Player.GetComponent<Hand>().CardInstances[j].selected)
@@ -163,10 +169,17 @@ public class GameManager : MonoBehaviour {
                     j--;
                 }
             }
-            turn = 1;
-            cardSelected = 0;
+            if (turn != 3)
+            {
+                turn++;
+            }
+            else
+            {
+                turn = 0;
+            }
+            Player.GetComponent<Hand>().cardSelected = 0;
             SetPlayedStandIn(newPlayedInstance);
-            Player.GetComponent<Hand>().HandFormat();
+            Hand(Player);
         }
         else
         {
@@ -179,8 +192,6 @@ public class GameManager : MonoBehaviour {
         if (playedCard[0].GetComponent<Card>().suit != PlayedCardInstance.GetComponent<Card>().suit 
             && playedCard[0].GetComponent<Card>().number != PlayedCardInstance.GetComponent<Card>().number) 
         {
-          /*  print("COLOR: " + playedCard[0].GetComponent<Card>().suit + " NUMBER: " + playedCard[0].GetComponent<Card>().number);
-            print("COLOR: " + PlayedCardInstance.GetComponent<Card>().suit + " NUMBER: " + PlayedCardInstance.GetComponent<Card>().number); */
                 return false;
         }
         if (playedCard.Count > 0)
@@ -216,12 +227,17 @@ public class GameManager : MonoBehaviour {
             DeckCardInstance = null;
         }
         DeckCardInstance = DeckInstance.GetComponent<Deck>().UnoDeck[DeckInstance.GetComponent<Deck>().UnoDeck.Count - 1];
-        DeckCardInstance = (Card)Instantiate(DeckCardInstance, new Vector3(-3, 0, 0), Quaternion.Euler(90, 180, 0));
+        DeckCardInstance = (Card)Instantiate(DeckCardInstance, new Vector3(-3, 0, 0), Quaternion.Euler(90, 180, -180));
     }
 
-    void BeginGame() 
+    void BeginGame()
     {
-        DeckInstance = (Deck)Instantiate(deck, new Vector3(-3, 0, 0), Quaternion.Euler(0, 0, 0));
+        PlayerInstance = (GameObject)Instantiate(Player, new Vector3(0, 0, -4f), Quaternion.Euler(0, 0, 0));
+        AIInstances[0] = (GameObject)Instantiate(AI, new Vector3(6.5f, 0, 0), Quaternion.Euler(0, 0, 0));
+        AIInstances[1] = (GameObject)Instantiate(AI, new Vector3(0, 0, 4f), Quaternion.Euler(0, 0, 0));
+        AIInstances[2] = (GameObject)Instantiate(AI, new Vector3(-6.5f, 0, 0), Quaternion.Euler(0, 0, 0));
+
+        DeckInstance = (Deck)Instantiate(deck, new Vector3(7, 0, 0), Quaternion.Euler(0, 0, 0));
         PlayedInstance = (Deck)Instantiate(played, new Vector3(0, 0, 0), Quaternion.Euler(0, 0, 0));
 
         DeckInstance.CreateDeck();
@@ -234,6 +250,11 @@ public class GameManager : MonoBehaviour {
         PlayedInstance.GetComponent<Deck>().UnoDeck.Add(firstCard);
         SetPlayedStandIn(firstCard);
         PlayedInstance.GetComponent<Deck>().cardsLeft++;
+
+        for (int i = 0; i< 3; i++)
+        {
+            AIInstances[i].GetComponent<AI>().CheckCardsLeft(firstCard);
+        }
     }
 
     void EndGame()
