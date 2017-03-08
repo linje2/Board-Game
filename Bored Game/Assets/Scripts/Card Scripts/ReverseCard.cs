@@ -4,8 +4,4 @@ using System;
 
 public class ReverseCard : Special {
 
-    public override void DoSpecialMove()
-    {
-        
-    }
 }

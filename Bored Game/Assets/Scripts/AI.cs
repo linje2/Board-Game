@@ -11,15 +11,23 @@ public class AI : MonoBehaviour {
     public int RedCardsLeft = 25;
     public int YellowCardsLeft = 25;
 
+    public int turnNumber;
+
+    private float randSec;
+
 	// Use this for initialization
 	void Start () {
 	
 	}
 	
-	// Update is called once per frame
 	void Update () {
 	
 	}
+
+    void ShoutUno()
+    {
+        randSec = Random.Range(0f, 2f);
+    }
 
     public void ResetCardsLeft(Card MiddleCard)
     {
@@ -104,6 +112,14 @@ public class AI : MonoBehaviour {
 
     public void PlayCard ()
     {
-
+        for (int i = 0; i< this.GetComponent<Hand>().Cards.Count; i++)
+        {
+            if (this.GetComponent<Hand>().Cards[i].number == -3 || this.GetComponent<Hand>().Cards[i].number == -4)
+            {
+                this.GetComponent<Hand>().cardSelected = i;
+                this.GetComponent<Hand>().SelectCard();
+                break;
+            }
+        }
     }
 }

@@ -9,6 +9,10 @@ public class Hand : MonoBehaviour {
     public int cardSelected = 0;
     public bool isShowing;
 
+    public bool MustDraw = false;
+    public bool Shouted = false;
+    public bool OneCardLeft = false;
+
     public List<Card> SelectedCards = new List<Card>();
     public List<Card> SelectedInstances = new List<Card>();
     float increaseBy;
@@ -25,6 +29,14 @@ public class Hand : MonoBehaviour {
         else
         {
             increaseBy = -0.5f;
+        }
+    }
+
+    void Update()
+    {
+        if (count == 1)
+        {
+            OneCardLeft = true;
         }
     }
 

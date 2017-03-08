@@ -4,8 +4,4 @@ using System;
 
 public class Plus2Card : Special {
 
-	public override void DoSpecialMove()
-    {
-
-    }
 }
