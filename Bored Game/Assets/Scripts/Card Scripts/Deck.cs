@@ -9,22 +9,20 @@ public class Deck : MonoBehaviour {
 
     public void CreateDeck()
     {
-      //  print("Create");
         for (int i = 0; i < cards.Length; i++)
         {
             UnoDeck.Add(cards[i]);
             if (cards[i].suit == 4) {
-                for(int j = 0; j < 2; j++)
-                {
-                    UnoDeck.Add(cards[i]);
-                }
+                UnoDeck.Add(cards[i]);
+                UnoDeck.Add(cards[i]);
             }
             if(cards[i].number != 0)
             {
                 UnoDeck.Add(cards[i]);
             }
         }
-        cardsLeft = UnoDeck.Count; 
+        cardsLeft = UnoDeck.Count;
+        print(cardsLeft);
     }
 
     public Card Draw()

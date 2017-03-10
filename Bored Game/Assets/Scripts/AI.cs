@@ -15,14 +15,25 @@ public class AI : MonoBehaviour {
 
     private float randSec;
 
-	// Use this for initialization
-	void Start () {
-	
-	}
-	
-	void Update () {
-	
-	}
+
+    public int ChooseColor()
+    {
+        int[] suits = new int[4];
+        for (int i = 0; i < GetComponent<Hand>().Cards.Count; i++)
+        {
+            if (GetComponent<Hand>().Cards[i].suit != 4)
+            {
+                suits[GetComponent<Hand>().Cards[i].suit]++;
+            }
+        }
+        int max = 0;
+        for (int j = 0; j< suits.Length; j++)
+        {
+            if (suits[max] < suits[j])
+                max = j;
+        }
+        return max;
+    }
 
     void ShoutUno()
     {
@@ -110,16 +121,25 @@ public class AI : MonoBehaviour {
         }
     }
 
-    public void PlayCard ()
+    public bool DrawTwoOrFour(Card card)
     {
-        for (int i = 0; i< this.GetComponent<Hand>().Cards.Count; i++)
+        for (int i = 0; i < this.GetComponent<Hand>().Cards.Count; i++)
         {
-            if (this.GetComponent<Hand>().Cards[i].number == -3 || this.GetComponent<Hand>().Cards[i].number == -4)
+            if (card.number == GetComponent<Hand>().Cards[i].number)
             {
                 this.GetComponent<Hand>().cardSelected = i;
                 this.GetComponent<Hand>().SelectCard();
-                break;
+                return true;
             }
         }
+        return false;
+    }
+    public void PlayCard ()
+    {
+      StartCoroutine(Wait());
+    }
+    IEnumerator Wait()
+    {
+        yield return new WaitForSeconds(4);
     }
 }

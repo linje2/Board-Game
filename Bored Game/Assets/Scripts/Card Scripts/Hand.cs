@@ -17,7 +17,16 @@ public class Hand : MonoBehaviour {
     public List<Card> SelectedInstances = new List<Card>();
     float increaseBy;
     float zCoordinate;
+    public int xRotation;
+    public int yRotation;
+    public int zRotation;
 
+    public void SetRotation(int x, int y, int z)
+    {
+        xRotation = x;
+        yRotation = y;
+        zRotation = z;
+    }
     void Start()
     {
         count = Cards.Count;
@@ -117,6 +126,7 @@ public class Hand : MonoBehaviour {
             for (int i = 0; i < count; i++)
             {
                 Vector3 transformValue = new Vector3(xValue, yValue, zValue);
+                CardInstances[i].gameObject.transform.rotation = Quaternion.Euler(xRotation, yRotation, zRotation);
                 CardInstances[i].gameObject.transform.position = transformValue;
                 zValue += 1.5f;
             }
@@ -125,10 +135,11 @@ public class Hand : MonoBehaviour {
         {
             float zValue = -4.5f;
             float interval = 8f / count;
-            print(interval);
+      //      print(interval);
             for (int i = 0; i < count; i++)
             {
                 Vector3 transformValue = new Vector3(xValue, yValue, zValue);
+                CardInstances[i].gameObject.transform.rotation = Quaternion.Euler(xRotation, yRotation, zRotation);
                 CardInstances[i].gameObject.transform.position = transformValue;
                 zValue += interval;
             }
@@ -144,6 +155,7 @@ public class Hand : MonoBehaviour {
             float xValue = -1.5f * (count / 2);
             for (int i = 0; i < count; i++){ 
                 Vector3 transformValue = new Vector3(xValue, yValue, zValue);
+                CardInstances[i].gameObject.transform.rotation = Quaternion.Euler(xRotation, yRotation, zRotation);
                 CardInstances[i].gameObject.transform.position = transformValue;
                 xValue += 1.5f;
             }
@@ -152,9 +164,10 @@ public class Hand : MonoBehaviour {
         else{
             float xValue = -4.5f;
             float interval = 8f / count;
-            print(interval);
+          //  print(interval);
             for (int i = 0; i < count; i++){
                 Vector3 transformValue = new Vector3(xValue, yValue, zValue);
+                CardInstances[i].gameObject.transform.rotation = Quaternion.Euler(xRotation, yRotation, zRotation);
                 CardInstances[i].gameObject.transform.position = transformValue;
                 xValue += interval;
             } 
