@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour {
     public GameObject Player; 
@@ -11,6 +12,7 @@ public class GameManager : MonoBehaviour {
 
     public int turn; //Regulates order of players playing
     public bool DrawCards = false;
+  //  public bool IsUno = false;
     public int numToDraw;
 
     private GameObject PlayerInstance;
@@ -18,19 +20,23 @@ public class GameManager : MonoBehaviour {
     private Deck DeckInstance;
     private Deck PlayedInstance;
     private Card DeckCardInstance;
-    private Card PlayedCardInstance;
+    public static Card PlayedCardInstance;
+    private int numWon = 0;
 
     public RawImage PlayerTurn;
     public RawImage AI1Turn;
     public RawImage AI2Turn;
     public RawImage AI3Turn;
-    public Button Uno;
+    public Text PlayerWin;
+    public Text[] AIWins;
+  //  public Button Uno;
     public Button Draw;
     public Button Red;
     public Button Blue;
     public Button Green;
+    public Button PlayAgain;
     public Button Yellow;
-    public Text Shout;
+ //   public Text Shout;
     public Text Reshuffle;
     public Text ColorNow;
 
@@ -39,6 +45,7 @@ public class GameManager : MonoBehaviour {
     {
         BeginGame();
         UpdateColor();
+        ChangeEnable();
     }
 
     void UpdateColor()
@@ -65,8 +72,65 @@ public class GameManager : MonoBehaviour {
     {
         UpdateColor();
 
+        /*    int UnoPlayer = CheckUno();
+            if (UnoPlayer != 4)
+            {
+                Uno.enabled = true;
+            } */
+        if (numToDraw > 0)
+        {
+            if (turn == 0)
+            {
+                for (int i = 0; i < PlayerInstance.GetComponent<Hand>().Cards.Count; i++)
+                {
+                    if (PlayerInstance.GetComponent<Hand>().Cards[i].number == PlayedCardInstance.number)
+                    {
+                        Draw.gameObject.SetActive(true);
+                        Draw.enabled = true;
+                        break;
+                    }
+                }
+                if (Draw.enabled == false)
+                {
+                    for (int j = 0; j < numToDraw; j++)
+                    {
+                        GetNextCard(PlayerInstance);
+                    }
+                    NextTurn();
+                }
+            }
+            else
+            {
+                AIInstances[FindAIPlaying(turn)].GetComponent<AI>().DrawTwoOrFour(PlayedCardInstance);
+                if (AIInstances[FindAIPlaying(turn)].GetComponent<Hand>().SelectedCards.Count > 0)
+                {
+                    PlayCards(AIInstances[FindAIPlaying(turn)], AIInstances[FindAIPlaying(turn)].GetComponent<Hand>().SelectedCards, AIInstances[FindAIPlaying(turn)].GetComponent<Hand>().SelectedInstances);
+                }
+                else
+                {
+                    for (int j = 0; j < numToDraw; j++)
+                    {
+                        GetNextCard(AIInstances[FindAIPlaying(turn)]);
+                    }
+                    NextTurn();
+                }
+            }
+            numToDraw = 0;
+        }
         if (turn == 0)
         {
+            if (PlayerInstance.GetComponent<Hand>().Cards.Count == 0)
+            {
+                if (numWon == 4)
+                {
+                    PlayerWin.text = "You Lose";
+                }
+                else
+                {
+                    PlayerWin.text = "Number " + numWon.ToString();
+                }
+                turn++;
+            }
             if (Input.GetKeyDown(KeyCode.Space)) //Draws Card
             {
                 GetNextCard(PlayerInstance);
@@ -94,8 +158,40 @@ public class GameManager : MonoBehaviour {
         }
         else
         {
-            int playing = FindAIPlaying();
-            AIInstances[playing].GetComponent<AI>().PlayCard();
+            int playing = FindAIPlaying(turn);
+            GameObject Next;
+            GameObject Before;
+            int nextPlayer = playing + 1;
+            if (nextPlayer == 3)
+            {
+                Next = PlayerInstance;
+            }
+            else
+            {
+                Next = AIInstances[nextPlayer];
+            }
+            int playerBefore = playing - 1;
+            if (playerBefore == -1)
+            {
+                Before = PlayerInstance;
+            }
+            else
+            {
+                Before = AIInstances[playerBefore];
+            }
+            if (AIInstances[playing].GetComponent<Hand>().Cards.Count == 0)
+            {
+                if (numWon == 4)
+                {
+                    AIWins[playing].text = "Lose";
+                }
+                else
+                {
+                    AIWins[playing].text = "Number " + numWon.ToString();
+                }
+                turn++;
+            }
+            AIInstances[playing].GetComponent<AI>().PlayCard(PlayedCardInstance, Next, Before);
               if (AIInstances[playing].GetComponent<Hand>().SelectedCards.Count == 0)
                  {
                      GetNextCard(AIInstances[playing]);
@@ -103,19 +199,20 @@ public class GameManager : MonoBehaviour {
                  }
                  else
                  {
-                     PlayCards(AIInstances[playing], AIInstances[playing].GetComponent<Hand>().Cards, AIInstances[playing].GetComponent<Hand>().SelectedCards);
+                     PlayCards(AIInstances[playing], AIInstances[playing].GetComponent<Hand>().SelectedCards, AIInstances[playing].GetComponent<Hand>().SelectedInstances);
                  } 
         }
 
         ViewTurn();
     }
 
-    int FindAIPlaying()
+
+    int FindAIPlaying(int getTurn)
     {
         int playing = 0;
         for (int i = 0; i< AIInstances.Length; i++)
         {
-            if (turn == AIInstances[i].GetComponent<AI>().turnNumber)
+            if (getTurn == AIInstances[i].GetComponent<AI>().turnNumber)
             {
                 playing = i;
                 break;
@@ -232,58 +329,18 @@ public class GameManager : MonoBehaviour {
                 if (turn == 0)
                 {
                     ColorNow.text = "Choose New";
-                    Red.enabled = true;
-                    Blue.enabled = true;
-                    Green.enabled = true;
-                    Yellow.enabled = true;
+                    ChangeEnable();
                 }
                 else
                 {
-                    PlayedCardInstance.suit = AIInstances[FindAIPlaying()].GetComponent<AI>().ChooseColor();
+                    PlayedCardInstance.suit = AIInstances[FindAIPlaying(turn)].GetComponent<AI>().ChooseColor();
                 }
             }
-
-            NextTurn();
-
-            if (numToDraw > 0)
+            else
             {
-                if (turn == 0)
-                {
-                    for (int i = 0; i < PlayerInstance.GetComponent<Hand>().Cards.Count; i++)
-                    {
-                        if (PlayerInstance.GetComponent<Hand>().Cards[i].suit == newPlayedInstance.suit)
-                        {
-                            Draw.enabled = true;
-                            break;
-                        }
-                    }
-                    if (Draw.enabled == false)
-                    {
-                        for (int j = 0; j < numToDraw; j++)
-                        {
-                            GetNextCard(PlayerInstance);
-                        }
-                        NextTurn();
-                    }
-                }
-                else
-                {
-                    AIInstances[FindAIPlaying()].GetComponent<AI>().DrawTwoOrFour(newPlayedInstance);
-                    if (AIInstances[FindAIPlaying()].GetComponent<Hand>().SelectedCards.Count > 0)
-                    {
-                        PlayCards(AIInstances[FindAIPlaying()], AIInstances[FindAIPlaying()].GetComponent<Hand>().SelectedCards, AIInstances[FindAIPlaying()].GetComponent<Hand>().SelectedInstances);
-                    }
-                    else
-                    {
-                        for (int j = 0; j < numToDraw; j++)
-                        {
-                            GetNextCard(AIInstances[FindAIPlaying()]);
-                        }
-                        NextTurn();
-                    }
-                }
-                numToDraw = 0;
+                print("Can't Play");
             }
+            NextTurn();
             Hand(Player); //Updates the hand format
         }
     }
@@ -327,61 +384,63 @@ public class GameManager : MonoBehaviour {
         } 
     } 
 
+    public void ChangeEnable()
+    {
+        Red.enabled = !Red.enabled;
+        Blue.enabled = !Blue.enabled;
+        Green.enabled = !Green.enabled;
+        Yellow.enabled = !Yellow.enabled;
+    }
 
     public void ClickBlue()
     {
         PlayedCardInstance.suit = 0;
         print(PlayedCardInstance.suit);
-        Red.enabled = false;
-        Blue.enabled = false;
-        Green.enabled = false;
-        Yellow.enabled = false;
+        ChangeEnable();
     }
 
     public void ClickGreen()
     {
         PlayedCardInstance.suit = 1;
         print(PlayedCardInstance.suit);
-        Red.enabled = false;
-        Blue.enabled = false;
-        Green.enabled = false;
-        Yellow.enabled = false;
+        ChangeEnable();
     }
     public void ClickRed()
     {
         PlayedCardInstance.suit = 2;
         print(PlayedCardInstance.suit);
-        Red.enabled = false;
-        Blue.enabled = false;
-        Green.enabled = false;
-        Yellow.enabled = false;
+        ChangeEnable();
     }
 
     public void ClickYellow()
     {
         PlayedCardInstance.suit = 3;
         print(PlayedCardInstance.suit);
-        Red.enabled = false;
-        Blue.enabled = false;
-        Green.enabled = false;
-        Yellow.enabled = false;
+        ChangeEnable();
     }
 
     public void MustDraw() //Player presses draw button
     {
+        Draw.gameObject.SetActive(false);
         DrawCards = true;
+        for (int j = 0; j < numToDraw; j++)
+        {
+            GetNextCard(PlayerInstance);
+        }
+        numToDraw = 0;
+        int suit = PlayedCardInstance.suit;
     }
 
-    bool CanPlay(List<Card> playedCard) //Returns TRUE if the cards selected can be played, FALSE if the cards can't
+    public static bool CanPlay(List<Card> playedCard) //Returns TRUE if the cards selected can be played, FALSE if the cards can't
     {
         if (playedCard.Count > 0)
         {
-            if (playedCard[0].GetComponent<Card>().suit == PlayedCardInstance.GetComponent<Card>().suit //Checks if the first card has the same number or suit as the card in the middle
-                || playedCard[0].GetComponent<Card>().number == PlayedCardInstance.GetComponent<Card>().number || playedCard[0].GetComponent<Card>().suit == 4)
+            if (playedCard[0].suit == PlayedCardInstance.suit //Checks if the first card has the same number or suit as the card in the middle
+                || playedCard[0].number == PlayedCardInstance.number || playedCard[0].suit == 4)
             {
                 for (int i = 1; i < playedCard.Count; i++) //Checks to see if the rest of the cards played has the same number as the first 
                 {
-                    if (playedCard[i].GetComponent<Card>().number != playedCard[i - 1].GetComponent<Card>().number)
+                    if (playedCard[i].number != playedCard[i - 1].number)
                     {
                         print("Cards not the same number");
                         return false;
@@ -470,11 +529,44 @@ public class GameManager : MonoBehaviour {
         }
     }
 
+  /*  int CheckUno() //returns who has one card
+    {
+        if (PlayerInstance.GetComponent<Hand>().Cards.Count == 1)
+        {
+            IsUno = true;
+            return 0;
+        }
+        else
+        {
+            for (int i = 0; i < AIInstances.Length; i++)
+            {
+                if (AIInstances[i].GetComponent<Hand>().Cards.Count == 1)
+                {
+                    IsUno = true;
+                    return i;
+                }
+            }
+        }
+        return 4;
+    } */
+
+    public void PressPlay()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
     void EndGame()
     {
+        bool gameEnding = false;
         if (deck.GetComponent<Deck>().UnoDeck.Count == 0 && played.GetComponent<Deck>().UnoDeck.Count == 1)
         {
             print("END GAME");
+            Time.timeScale = 0;
+        }
+        if (numWon == 4)
+        {
+            gameEnding = true;
+            Time.timeScale = 0;
         }
     }
 }

@@ -1,134 +1,290 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.UI;
 
-public class Test : MonoBehaviour {
 
-    public GameObject Player;
-    public GameObject AI;
-    public Deck deck;
-    public Deck played;
+public class Test : MonoBehaviour
+{
+    public Card PlayedCardInstance;
+    public int Plus4CardsLeft = 4;
+    public int ColorPickerLeft = 4;
+    public int Plus2CardsLeft = 8;
+    public int BlueCardsLeft = 25;
+    public int GreenCardsLeft = 25;
+    public int RedCardsLeft = 25;
+    public int YellowCardsLeft = 25;
 
-    public int turn; //Regulates order of players playing
-    public int AINumber;
+    public int turnNumber;
 
-    private GameObject PlayerInstance;
-    private GameObject[] AIInstances = new GameObject[3];
-    private Deck DeckInstance;
-    private Deck PlayedInstance;
-    private Card DeckCardInstance;
-    private Card PlayedCardInstance;
+    private float randSec;
 
-    public RawImage PlayerTurn;
-    public RawImage AI1Turn;
-    public RawImage AI2Turn;
-    public RawImage AI3Turn;
-    void Start () {
-	
-	}
-	
-	// Update is called once per frame
-	void Update () {
-        BeginGame();
-	}
 
-    void BeginGame()
+    public int ChooseColor()
     {
-        PlayerInstance = (GameObject)Instantiate(Player, new Vector3(0, 0, -4f), Quaternion.Euler(0, 0, 0));
-        AIInstances[0] = (GameObject)Instantiate(AI, new Vector3(6.5f, 0, 0), Quaternion.Euler(0, 0, 0));
-        AIInstances[1] = (GameObject)Instantiate(AI, new Vector3(0, 0, 4f), Quaternion.Euler(0, 0, 0));
-        AIInstances[2] = (GameObject)Instantiate(AI, new Vector3(-6.5f, 0, 0), Quaternion.Euler(0, 0, 0));
-
-        PlayerInstance.GetComponent<Hand>().SetRotation(-91, -90, -90);
-        AIInstances[0].GetComponent<Hand>().SetRotation(91, 0, 90);
-        AIInstances[1].GetComponent<Hand>().SetRotation(91, -90, 90);
-        AIInstances[2].GetComponent<Hand>().SetRotation(91, 180, 90);
-
-        DeckInstance = (Deck)Instantiate(deck, new Vector3(7, 0, 0), Quaternion.Euler(0, 0, 0));
-        PlayedInstance = (Deck)Instantiate(played, new Vector3(0, 0, 0), Quaternion.Euler(0, 0, 0));
-
-        DeckInstance.CreateDeck();
-        DeckInstance.Shuffle(3);
-        SetDeckCardStandIn();
-
-        FirstDeal();
-
-        Card firstCard = DeckInstance.Draw();
-        PlayedInstance.GetComponent<Deck>().UnoDeck.Add(firstCard); 
-        SetPlayedStandIn(firstCard);
-        PlayedInstance.GetComponent<Deck>().cardsLeft++;
-
-        for (int i = 0; i < 3; i++)
+        int[] suits = new int[4];
+        for (int i = 0; i < GetComponent<Hand>().Cards.Count; i++)
         {
-            AIInstances[i].GetComponent<AI>().CheckCardsLeft(firstCard);
-            AIInstances[i].GetComponent<AI>().turnNumber = i + 1;
+            if (GetComponent<Hand>().Cards[i].suit != 4)
+            {
+                suits[GetComponent<Hand>().Cards[i].suit]++;
+            }
+        }
+
+        int max = 0;
+        for (int j = 0; j < suits.Length; j++)
+        {
+            if (suits[max] < suits[j])
+                max = j;
+        }
+        return max;
+    }
+
+
+    public void ResetCardsLeft(Card MiddleCard)
+    {
+        int number;
+        int suit;
+        for (int i = 0; i <= this.GetComponent<Hand>().Cards.Count; i++)
+        {
+            if (i == this.GetComponent<Hand>().Cards.Count)
+            {
+                number = MiddleCard.number;
+                suit = MiddleCard.suit;
+            }
+            else
+            {
+                number = this.GetComponent<Hand>().Cards[i].number;
+                suit = this.GetComponent<Hand>().Cards[i].suit;
+            }
+            if (number == -4)
+            {
+                Plus4CardsLeft++;
+            }
+            if (number == -3)
+            {
+                Plus2CardsLeft++;
+            }
+            if (number == -5)
+            {
+                ColorPickerLeft++;
+            }
+            if (suit == 0)
+            {
+                BlueCardsLeft--;
+            }
+            else if (suit == 1)
+            {
+                GreenCardsLeft--;
+            }
+            else if (suit == 2)
+            {
+                RedCardsLeft--;
+            }
+            else if (suit == 3)
+            {
+                YellowCardsLeft--;
+            }
         }
     }
 
-    void FirstDeal() //Hands out first 7 cards to all players
+    public void CheckCardsLeft(Card CardPlayed)
     {
-        for (int i = 0; i < 7; i++)
+        int number = CardPlayed.number;
+        int suit = CardPlayed.suit;
+        if (number == -4)
         {
-            GetNextCard(PlayerInstance);
-            GetNextCard(AIInstances[0]);
-            GetNextCard(AIInstances[1]);
-            GetNextCard(AIInstances[2]);
+            Plus4CardsLeft--;
+        }
+        if (number == -3)
+        {
+            Plus2CardsLeft--;
+        }
+        if (number == -5)
+        {
+            ColorPickerLeft--;
+        }
+        if (suit == 0)
+        {
+            BlueCardsLeft--;
+        }
+        else if (suit == 1)
+        {
+            GreenCardsLeft--;
+        }
+        else if (suit == 2)
+        {
+            RedCardsLeft--;
+        }
+        else if (suit == 3)
+        {
+            YellowCardsLeft--;
         }
     }
 
-    void GetNextCard(GameObject player)
+    public bool DrawTwoOrFour(Card card)
     {
-        Card nextDraw = DeckInstance.Draw();
-        SetDeckCardStandIn();
-        player.GetComponent<Hand>().AddCard(nextDraw);
-        if (player.transform.position.z != -4f)
+        for (int i = 0; i < this.GetComponent<Hand>().Cards.Count; i++)
         {
-            player.GetComponent<AI>().CheckCardsLeft(nextDraw);
+            if (card.number == GetComponent<Hand>().Cards[i].number)
+            {
+                this.GetComponent<Hand>().cardSelected = i;
+                this.GetComponent<Hand>().SelectCard();
+                return true;
+            }
         }
-        nextDraw = (Card)Instantiate(nextDraw);
-        player.GetComponent<Hand>().AddInstance(nextDraw);
-        Hand(player);
+        return false;
     }
 
-    void Hand(GameObject player)
+    public List<List<Card>> results = new List<List<Card>>();
+    public void PlayCard(Card MiddleCard, GameObject NextPlayer, GameObject PlayerBefore)
     {
-        if (player.transform.position.z == PlayerInstance.transform.position.z || player.transform.position.z == AIInstances[1].transform.position.z)
+        List<Card> Hand = new List<Card>(this.GetComponent<Hand>().Cards);
+        List<Card> result = ChooseCard(Hand, MiddleCard);
+        if (NextPlayer.GetComponent<Hand>().Cards.Count < 3 && result.Count < Hand.Count)
         {
-            player.GetComponent<Hand>().HandFormatLeftRight();
+            List<Card> PlusTwo = new List<Card>();
+            List<Card> PlusFour = new List<Card>();
+            List<Card> Skip = new List<Card>();
+            List<Card> Reverse = new List<Card>();
+            for (int i = 0; i < Hand.Count; i++)
+            {
+                if (Hand[i].number == -3)
+                {
+                    PlusTwo.Add(Hand[i]);
+                    AddToSelect(PlusTwo);
+                    break;
+                }
+                else if(Hand[i].number == -4)
+                {
+                    PlusFour.Add(Hand[i]);
+                    AddToSelect(PlusFour);
+                    break;
+                }
+                else if (Hand[i].number == -2)
+                {
+                    Skip.Add(Hand[i]);
+                    AddToSelect(Skip);
+                    break;
+                }
+                else if (Hand[i].number == -1)
+                {
+                    Reverse.Add(Hand[i]);
+                    AddToSelect(Reverse);
+                    break;
+                }
+            }
+            if (PlusTwo.Count == 0 && PlusFour.Count == 0 && Skip.Count == 0 && Reverse.Count == 0)
+            {
+                AddToSelect(result);
+            }
+        }
+        if (PlayerBefore.GetComponent<Hand>().Cards.Count < 3 && result.Count < Hand.Count)
+        {
+            for (int i = 0; i < Hand.Count; i++)
+            {
+                if (Hand[i].number == -1)
+                {
+                    Hand.RemoveAt(i);
+                    i--;
+                }
+            }
+            result = ChooseCard(Hand, MiddleCard);
+        }
+        AddToSelect(result);
+    }
+
+    public List<Card> ChooseCard(List<Card> Hand, Card MiddleCard)
+    {
+        for (int a = 0; a < Hand.Count; a++)
+        {
+            if (Hand[a].suit == MiddleCard.suit || Hand[a].number == MiddleCard.number)
+            {
+                List<Card> chain = new List<Card>();
+                chain.Add(Hand[a]);
+                List<Card> remaining = new List<Card>(Hand);
+                remaining.Remove(Hand[a]);
+                subclass(chain, remaining);
+            }
+        }
+
+        if (results.Count > 0)
+        {
+            int max = 0;
+            for (int i = 1; i < results.Count; i++)
+            {
+                if (results[max].Count < results[i].Count)
+                {
+                    results.RemoveAt(max);
+                    max = i;
+                }
+                else
+                {
+                    results.RemoveAt(i);
+                }
+            }
+        }
+
+        for (int i = 0; i < results.Count; i++)
+        {
+            print("New Chain");
+            for (int j = 0; j < results[i].Count; j++)
+            {
+                List<Card> card = results[i];
+                print(card[j].suit + ", " + card[j].number);
+            }
+        }
+
+       List<Card> result = results[0];
+       int bestColor = ChooseColor();
+       for (int j = 0; j < result.Count; j++)
+       {
+          if (result[j].suit == bestColor)
+            {
+                Card temp = result[j];
+                result[j] = result[result.Count - 1];
+                result[result.Count - 1] = temp;
+            }
+       }
+
+        results.Clear();
+        return result;
+    }
+
+    public void subclass(List<Card> chain, List<Card> remaining)
+    {
+        if (remaining.Count == 0)
+        {
+            results.Add(chain);
         }
         else
         {
-            player.GetComponent<Hand>().HandFormatTopDown();
+            for (int b = 0; b < chain.Count; b++)
+            {
+                if (chain[0].number == remaining[b].number)
+                {
+                    List<Card> temp = new List<Card>(chain);
+                    temp.Add(remaining[b]);
+                    List<Card> tempRemaining = new List<Card>(remaining);
+                    tempRemaining.Remove(remaining[b]);
+                    subclass(temp, tempRemaining);
+                }
+                else
+                {
+                    results.Add(chain);
+                    break;
+                }
+            }
         }
     }
 
-    void SetPlayedStandIn(Card set)
+    void AddToSelect(List<Card> ToAdd)
     {
-        if (PlayedCardInstance != null)
+        for (int i = 0; i < ToAdd.Count; i++)
         {
-            Destroy(PlayedCardInstance.gameObject);
-            PlayedCardInstance = null;
+            this.GetComponent<Hand>().cardSelected = this.GetComponent<Hand>().Cards.IndexOf(ToAdd[i]);
+            this.GetComponent<Hand>().SelectCard();
         }
-        PlayedCardInstance = set;
-        PlayedCardInstance = (Card)Instantiate(PlayedCardInstance, new Vector3(0, 0, 0), Quaternion.Euler(-90, 180, 0));
     }
 
-    void SetDeckCardStandIn()
-    {
-        if (DeckCardInstance != null)
-        {
-            Destroy(DeckCardInstance.gameObject);
-            DeckCardInstance = null;
-        }
 
-        if (DeckInstance.GetComponent<Deck>().cardsLeft == 0)
-        {
-          //StartCoroutine(ReShuffleWait());
-            DeckInstance.GetComponent<Deck>().ReShuffle(PlayedInstance);
-            PlayedInstance.GetComponent<Deck>().cardsLeft = PlayedInstance.GetComponent<Deck>().UnoDeck.Count;
-        }
-        DeckCardInstance = DeckInstance.GetComponent<Deck>().UnoDeck[DeckInstance.GetComponent<Deck>().UnoDeck.Count - 1];
-        DeckCardInstance = (Card)Instantiate(DeckCardInstance, new Vector3(-3, 0, 0), Quaternion.Euler(90, 180, -180));
-    }
 }
